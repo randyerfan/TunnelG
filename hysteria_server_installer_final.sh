@@ -43,7 +43,23 @@ KEY_OUTPUT=$(hysteria2 keygen)
 PRIV_KEY=$(echo "$KEY_OUTPUT" | grep "Private key" | awk '{print $3}')
 PUB_KEY=$(echo "$KEY_OUTPUT" | grep "Public key" | awk '{print $3}')
 
-curl -s https://get.hy2.sh | bash
+echo "Downloading Hysteria 2 binary..."
+
+ARCH=$(uname -m)
+if [[ "$ARCH" == "x86_64" ]]; then
+    ARCH="amd64"
+elif [[ "$ARCH" == "aarch64" ]]; then
+    ARCH="arm64"
+else
+    echo "Unsupported architecture: $ARCH"
+    exit 1
+fi
+
+LATEST=$(curl -s https://api.github.com/repos/apernet/hysteria/releases/latest | grep "browser_download_url" | grep "linux-$ARCH.tar.gz" | cut -d '"' -f 4)
+curl -L "$LATEST" -o hysteria.tar.gz
+tar -xzf hysteria.tar.gz
+install -m 755 hysteria /usr/local/bin/hysteria2
+rm -rf hysteria* LICENSE README.md
 
 mkdir -p /etc/hysteria-server
 

@@ -23,7 +23,7 @@ for cmd in curl jq iperf3 tar; do
 done
 
 if [ $MISSING_PACKAGES -eq 1 ]; then
-  echo "❌ Failed to install required packages. Exiting."
+  echo "❌ Failed to install required packages. Exiting. xD"
   exit 1
 fi
 

@@ -2,7 +2,6 @@
 
 echo ">> Installing dependencies..."
 
-# نصب پکیج‌ها (برای دبیان/اوبونتو)
 if command -v apt >/dev/null 2>&1; then
     sudo apt update
     sudo apt install -y curl jq iperf3 tar
@@ -13,7 +12,6 @@ else
     exit 1
 fi
 
-# چک کردن نصب پکیج‌ها
 MISSING_PACKAGES=0
 for cmd in curl jq iperf3 tar; do
   if ! command -v $cmd >/dev/null 2>&1; then
@@ -39,14 +37,20 @@ else
     exit 1
 fi
 
-LATEST=$(curl -s https://api.github.com/repos/apernet/hysteria/releases/latest | grep "browser_download_url" | grep "linux-$ARCH.tar.gz" | cut -d '"' -f 4)
+LATEST=$(curl -s https://api.github.com/repos/apernet/hysteria/releases/latest | \
+jq -r ".assets[] | select(.name | test(\"linux-$ARCH.*.tar.gz\")) | .browser_download_url")
+
+if [ -z "$LATEST" ]; then
+    echo "Failed to get the latest download URL."
+    exit 1
+fi
+
 curl -L "$LATEST" -o hysteria.tar.gz
 tar -xzf hysteria.tar.gz
 sudo install -m 755 hysteria /usr/local/bin/hysteria2
 rm -rf hysteria* LICENSE README.md
 
 echo "Hysteria 2 installed successfully."
-
 echo -e "\033[1;32mHysteria 2 Server Installer\033[0m"
 echo "1) Install server"
 echo "2) Uninstall server"

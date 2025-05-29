@@ -1,16 +1,51 @@
 #!/bin/bash
 
-set -e
+echo ">> Installing dependencies..."
 
-echo -e "\033[1;34m>> Installing dependencies...\033[0m"
-apt update -y && apt install -y curl jq iperf3
-
-if ! command -v curl &> /dev/null || ! command -v iperf3 &> /dev/null; then
-    echo -e "\033[1;31m❌ Failed to install required packages. Exiting.\033[0m"
+# نصب پکیج‌ها (برای دبیان/اوبونتو)
+if command -v apt >/dev/null 2>&1; then
+    sudo apt update
+    sudo apt install -y curl jq iperf3 tar
+elif command -v yum >/dev/null 2>&1; then
+    sudo yum install -y curl jq iperf3 tar
+else
+    echo "❌ Unsupported package manager. Please install curl, jq, iperf3 and tar manually."
     exit 1
 fi
 
-echo -e "\033[1;34m>> Dependencies installed successfully.\033[0m"
+# چک کردن نصب پکیج‌ها
+MISSING_PACKAGES=0
+for cmd in curl jq iperf3 tar; do
+  if ! command -v $cmd >/dev/null 2>&1; then
+    echo "❌ Required package '$cmd' is not installed."
+    MISSING_PACKAGES=1
+  fi
+done
+
+if [ $MISSING_PACKAGES -eq 1 ]; then
+  echo "❌ Failed to install required packages. Exiting."
+  exit 1
+fi
+
+echo "Downloading Hysteria 2 binary..."
+
+ARCH=$(uname -m)
+if [[ "$ARCH" == "x86_64" ]]; then
+    ARCH="amd64"
+elif [[ "$ARCH" == "aarch64" ]]; then
+    ARCH="arm64"
+else
+    echo "Unsupported architecture: $ARCH"
+    exit 1
+fi
+
+LATEST=$(curl -s https://api.github.com/repos/apernet/hysteria/releases/latest | grep "browser_download_url" | grep "linux-$ARCH.tar.gz" | cut -d '"' -f 4)
+curl -L "$LATEST" -o hysteria.tar.gz
+tar -xzf hysteria.tar.gz
+sudo install -m 755 hysteria /usr/local/bin/hysteria2
+rm -rf hysteria* LICENSE README.md
+
+echo "Hysteria 2 installed successfully."
 
 echo -e "\033[1;32mHysteria 2 Server Installer\033[0m"
 echo "1) Install server"
